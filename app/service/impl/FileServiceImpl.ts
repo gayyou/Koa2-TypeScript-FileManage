@@ -66,10 +66,10 @@ export class FileServiceImpl implements FileService {
       { ownerId, contentId } = file;
 
     let contentDao: ContentDao = new ContentDaoImpl(),
-        content: Content = new Content({
-          ownerId,
-          contentId
-        })
+        content: Content = new Content();
+    content.ownerId = ownerId;
+    content.id = contentId;
+
 
     let result: any = await contentDao.searchContent(content);
     if (!result.length) {

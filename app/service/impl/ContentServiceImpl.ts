@@ -5,41 +5,60 @@ import {ContentDao} from "../../dao/ContentDao/ContentDao";
 import {ContentDaoImpl} from "../../dao/ContentDao/impl/ContentDaoImpl";
 import {isUndef} from "../../utils/typeUtils";
 import {DirectoryOperate} from "../../dao/DirectoryOperate";
+import {StatEnum} from "../../enums/StatEnum";
 
 export class ContentServiceImpl implements ContentService {
   contentDao: ContentDao;
+  directoryOperate: DirectoryOperate;
 
   constructor() {
     this.contentDao = new ContentDaoImpl();
+    this.directoryOperate = new DirectoryOperate()
   }
 
   async addContent(content: Content): Promise<RequestResult> {
-    let bashPath = await this.getBasePath(content);
+    let bashPath = await this.getPath(content);
     let targetContent: any = await this.contentDao.searchChildContent(content);
 
     if (targetContent.length) {
       return new RequestResult(500, '目标目录已经存在', content);
     }
 
-    let directoryOperate: DirectoryOperate = new DirectoryOperate(bashPath),
-        isExist = await DirectoryOperate.getStat(bashPath + content.name);
-
-    if (isExist && isExist.directory()) {
-      return new RequestResult(500, '目标目录已经存在', content);
-    } else if (isExist) {
-      return new RequestResult(500, '名字不能与文件重名', content);
-    }
-
     // 进行创建文件夹
-    let isSuccess: boolean = await directoryOperate.createDir(bashPath + content.name);
-    if (isSuccess) {
-      return new RequestResult(200, '文件夹创建成功', content);
+    let resultMsg: StatEnum = await this.directoryOperate.createDir(bashPath + content.name);
+    if (resultMsg == StatEnum.SUCCESS) {
+      let status = this.contentDao.addContent(content);
+      if (status) {
+        return new RequestResult(200, '创建文件夹成功', content);
+      } else {
+        return new RequestResult(500, '写入数据库失败', content);  // TODO 此时要进行文件的删除
+      }
     }
-    return new RequestResult(500, '文件夹创建失败', content);
+    return new RequestResult(500, resultMsg, content);
   }
 
+  /**
+   * @description 在服务器上面删除目录
+   * @param content
+   */
   async deleteContent(content: Content): Promise<RequestResult> {
-    return undefined;
+    let dataResult: any = await this.contentDao.searchContent(content);
+
+    if (dataResult.length) {
+      let path = await this.getPath(content);
+
+      if (!path.length) {
+        return new RequestResult(500, StatEnum.DELETE_PATH_IS_NOT_EXIST, content);
+      }
+
+      let status: StatEnum = await this.directoryOperate.deleteDir(path);
+      if (status == StatEnum.SUCCESS) {
+        return new RequestResult(200, status, content)
+      }
+      return new RequestResult(500, status, content);
+    }
+
+    return new RequestResult(500, StatEnum.DATA_READ_FAIL, content);
   }
 
   async renameContent(content: Content): Promise<RequestResult> {
@@ -50,21 +69,23 @@ export class ContentServiceImpl implements ContentService {
     return undefined;
   }
 
-  async getBasePath(content: Content): Promise<string> {
-    let pathArr: Array<string> = [];
+  async getPath(content: Content): Promise<string> {
+    let pathArr: Array<string> = [],
+        parentContent: Content = new Content();
 
-    let contentDao: ContentDao = new ContentDaoImpl();
-
-    let result: any = await contentDao.searchContent(content);
+    let result: any = await this.contentDao.searchContent(content);
     if (!result.length) {
       return '';
     }
+
     pathArr.push(result.name);
-    while (isUndef(result[0].parentId)) {
-      content.id = result[0].parentId;
-      result = await contentDao.searchContent(content);
+
+    while (!isUndef(result[0].parentid)) {
+      parentContent.id = result[0].parentid;
+      result = await this.contentDao.searchContent(parentContent);
+      console.log(result)
       if (!result.length) {
-        throw new Error('数据库发生错误')
+        throw new Error(StatEnum.DIR_AND_DATABASE_IS_NOT_SYNC);
       }
       pathArr.push(result.name);
     }

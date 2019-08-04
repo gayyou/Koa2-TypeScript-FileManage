@@ -10,5 +10,5 @@ export interface ContentService {
 
   renameContent(content: Content): Promise<RequestResult>;
 
-  getBasePath(content: Content): Promise<string>;
+  getPath(content: Content): Promise<string>;
 }

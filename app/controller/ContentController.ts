@@ -4,6 +4,7 @@ import {isNumber, isString, isUndef} from "../utils/typeUtils";
 import {Content} from "../model/bo/Content";
 import {User} from "../model/bo/User";
 import {ContentServiceImpl} from "../service/impl/ContentServiceImpl";
+import {StatEnum} from "../enums/StatEnum";
 
 @RequestMapping('/content')
 export class ContentController {
@@ -21,22 +22,34 @@ export class ContentController {
     }
 
     // 进行新建content对象
-    let content: Content = new Content({
-      name,
-      parentId
-    });
+    let content: Content = new Content();
     // 获取session值
     let user: User = ctx.session.user;
     if (!user) {
       return new RequestResult(500, '登陆过期，请重新登陆', {});
     }
+    // 初始化对象值
+    content.name = name;
+    content.parentId = parentId;
     content.ownerId = user.id;
     return await new ContentServiceImpl().addContent(content);
   }
 
   @PostMapping('/removecontent')
   async removeContent(ctx): Promise<RequestResult> {
-    return ;
+    let { contentId } = ctx.request.body;
+
+    if (isUndef(contentId)) {
+      return new RequestResult(500, StatEnum.REQUEST_DATA_FORMAT_IS_ERROR, {});
+    }
+
+    if (!isNumber(contentId)) {
+      return new RequestResult(500, StatEnum.REQUEST_DATA_TYPE_IS_ERROR, {});
+    }
+
+    let content: Content = new Content();
+    content.id = contentId;
+    return new ContentServiceImpl().deleteContent(content);
   }
 
   @PostMapping('/searchallchildren')
