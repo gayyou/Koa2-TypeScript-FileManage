@@ -1,5 +1,5 @@
 import { FileDao } from "../FileDao";
-import { File } from '../../../model/File'
+import { File } from '../../../model/bo/File'
 import { querySqlStr } from "../../CreateConnection";
 
 export class FileDaoImpl implements FileDao {
@@ -17,6 +17,13 @@ export class FileDaoImpl implements FileDao {
       return true;
     }
     return false;
+  }
+
+  async searchFile(file): Promise<any> {
+    let { name, contentId, ownerId } = file,
+        strSql = 'select * from file where name = ?, contentId = ? and ownerId = ?';
+
+    return await querySqlStr(strSql, [name, contentId, ownerId]);
   }
 
   /**

@@ -1,4 +1,4 @@
-import { User } from "../../model/User";
+import { User } from "../../model/bo/User";
 
 export interface UserDao {
   addAccount(user: User): Promise<boolean>;

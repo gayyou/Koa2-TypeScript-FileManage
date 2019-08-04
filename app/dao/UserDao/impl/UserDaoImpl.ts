@@ -1,5 +1,5 @@
 import { UserDao } from "../UserDao";
-import { User } from "../../../model/User";
+import { User } from "../../../model/bo/User";
 import { querySqlStr } from "../../CreateConnection";
 
 export class UserDaoImpl implements UserDao {
@@ -9,10 +9,9 @@ export class UserDaoImpl implements UserDao {
    */
   async addAccount (user: User): Promise<boolean> {
     let { account, password }: any = user,
-        sqlstr = 'INSERT INTO user (account, password) VALUES (?, ?);';
+        sqlstr = 'INSERT INTO user (account, password, permission) VALUES (?, ?, 1);';
     
     let result: any = await querySqlStr(sqlstr, [account, password]);
-
     if (result.affectedRows != 0) {
       return true;
     } else {

@@ -1,6 +1,8 @@
+import {getBasePath} from "../utils/utils";
+
 const path = require('path');
 const fs = require('fs');
-const bashPath = '../public/server';
+export const bashPath = '../public/server';
 
 /**
  * @description 进行文件目录的操作
@@ -12,7 +14,7 @@ export class DirectoryOperate {
     this.path = bashPath + path;
   }
 
-  public async createDir(targetPath: string): Promise<any> {
+  public async createDir(targetPath: string): Promise<boolean> {
     targetPath = targetPath ? bashPath + targetPath : this.path;
 
     let isExist: any = await DirectoryOperate.getStat(targetPath);
@@ -27,8 +29,8 @@ export class DirectoryOperate {
     let tempDir = path.parse(targetPath).dir;
 
     // 进行判断上级目录是否存在，如果不存在还是会继续创建目录
-    let status = await this.createDir(tempDir);
-    let mkdirStatus;
+    let status: boolean = await this.createDir(tempDir);
+    let mkdirStatus: boolean;
 
     if (status) {
       mkdirStatus = await this.mkdir(targetPath);
@@ -59,13 +61,7 @@ export class DirectoryOperate {
   public async renameDir(newName: string, targetPath: string) {
     targetPath = targetPath ? bashPath + targetPath : this.path;
 
-    let basePathArr: Array<string> = targetPath.split('/');
-
-    if (!basePathArr.length) {
-      throw new Error('the path length is zero');
-    }
-
-    let basePath: string = basePathArr.splice(-1, 1).join('/');
+    let basePath: string = getBasePath(targetPath);  // 得到父容器的路径
 
     let isExist: any = await DirectoryOperate.getStat(targetPath);
 
@@ -105,7 +101,7 @@ export class DirectoryOperate {
    * @description 查询路径是否有存在文件或者文件夹
    * @param path
    */
-  static getStat(path: string) {
+  static getStat(path: string): any {
     return new Promise((resolve, reject) => {
       fs.stat(path, (err, stats) => {
         if(err){
@@ -121,7 +117,7 @@ export class DirectoryOperate {
    * 创建路径
    * @param {string} dir 路径
    */
-  private mkdir(dir: string){
+  private mkdir(dir: string): Promise<boolean>{
     return new Promise((resolve, reject) => {
       fs.mkdir(dir, err => {
         if(err){

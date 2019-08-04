@@ -1,4 +1,4 @@
-import { File } from '../../model/File'
+import { File } from '../../model/bo/File'
 
 export interface FileDao {
   addFile(file: File): Promise<any>;
@@ -6,6 +6,8 @@ export interface FileDao {
   removeFile(fileList: Array<File>): Promise<any>;
 
   uploadFile(file: File): Promise<any>;
+
+  searchFile(file: File): Promise<any>;
 
   changeFileName(file: File): Promise<any>;
 }

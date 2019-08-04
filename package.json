@@ -9,12 +9,15 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "glob": "^7.1.4",
     "koa": "^2.7.0",
     "koa-body": "^4.1.0",
-    "koa-bodyparser": "^4.2.1",
-    "mysql": "^2.17.1"
+    "koa-bodyparser": "^4.2.1"
   },
   "devDependencies": {
+    "@types/mysql": "^2.15.6",
+    "koa-session": "^5.12.2",
+    "mysql": "^2.17.1",
     "tkoa": "^1.0.1",
     "ts-node": "^8.3.0"
   }

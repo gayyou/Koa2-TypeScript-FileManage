@@ -1,5 +1,5 @@
 import { ContentDao } from "../ContentDao";
-import {Content} from "../../../model/Content";
+import {Content} from "../../../model/bo/Content";
 import {querySqlStr} from "../../CreateConnection";
 
 export class ContentDaoImpl implements ContentDao {
@@ -78,5 +78,16 @@ export class ContentDaoImpl implements ContentDao {
         sqlStr = 'select * from content where parentid = ?;';
 
     return await querySqlStr(sqlStr, [id]);
+  }
+
+  /**
+   * @description 根据父节点以及名字来查找子节点
+   * @param content
+   */
+  async searchChildContent(content: Content): Promise<any> {
+    let { parentId, name } = content,
+        sqlStr = 'select * from content where parentid = ? and name = ?';
+
+    return await querySqlStr(sqlStr, [parentId, name]);
   }
 }

@@ -1,6 +1,5 @@
 import { mysqlConfig } from '../../config/mysql.config'
-import { mysql } from 'mysql'
-import { resolve } from 'dns';
+const mysql = require('mysql')
 
 const connection = mysql.createConnection(mysqlConfig);
 

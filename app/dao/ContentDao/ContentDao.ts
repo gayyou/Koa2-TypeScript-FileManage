@@ -1,4 +1,4 @@
-import { Content } from "../../model/Content";
+import { Content } from "../../model/bo/Content";
 
 export interface ContentDao {
   addContent(content: Content): Promise<any>;
@@ -10,4 +10,6 @@ export interface ContentDao {
   removeContent(contentList: Array<Content>): Promise<any>;
 
   searchChildrenListById(content: Content): Promise<any>;
+
+  searchChildContent(content: Content): Promise<any>;
 }
