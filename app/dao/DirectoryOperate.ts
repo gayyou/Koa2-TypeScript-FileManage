@@ -1,5 +1,6 @@
 import {getBasePath} from "../utils/utils";
 import {StatEnum} from "../enums/StatEnum";
+import {isUndef} from "../utils/typeUtils";
 
 const path = require('path');
 const fs = require('fs');
@@ -55,7 +56,7 @@ export class DirectoryOperate {
     let isExist: any = await DirectoryOperate.getStat(targetPath);
 
     if (isExist && isExist.isDirectory()) {
-      return await this.deleteDirTool(targetPath) ? StatEnum.SUCCESS : StatEnum.FAIL;
+      return await this.deleteDirTool(targetPath);
     } else if (isExist) {
       return StatEnum.DELETE_TARGET_IS_FILE;
       // throw new Error('the target path is a file, not a directory!');
@@ -70,26 +71,27 @@ export class DirectoryOperate {
    * @param newName
    * @param targetPath
    */
-  public async renameDir(newName: string, targetPath: string) {
+  public async renameDir(newName: string, targetPath: string): Promise<StatEnum> {
     targetPath = targetPath ? bashPath + targetPath : this.path;
 
-    let basePath: string = getBasePath(targetPath);  // 得到父容器的路径
+    // let basePath: string = getBasePath(targetPath);  // 得到父容器的路径
 
     let isExist: any = await DirectoryOperate.getStat(targetPath);
-
+    console.log(targetPath.split('/').slice(0, targetPath.length - 1).join('/') + '/' + newName)
     if (isExist && isExist.isDirectory()) {
-      return await fs.renameSync(targetPath,basePath + newName);
+      await fs.renameSync(targetPath,targetPath.split('/').slice(0, targetPath.length - 1).join('/') + '/' + newName);
+      return StatEnum.SUCCESS;
     } else if (isExist) {
-      throw new Error('the target path is a file, not a directory!');
+      return StatEnum.DIR_SAME_NAME_OF_FILE;
     }
-    throw new Error('can not fine the target path');
+    return StatEnum.DIR_IS_NOT_EXIST;
   }
 
   /**
    * @description 进行递归删除文件夹内部的所有文件操作
    * @param dir
    */
-  private deleteDirTool(dir: string): Promise<any> {
+  private deleteDirTool(dir: string): Promise<StatEnum> {
     return new Promise ((resolve, reject) => {
       //先读文件夹
       fs.stat(dir, (err, stat) => {
@@ -99,7 +101,9 @@ export class DirectoryOperate {
             files = files.map(file => this.deleteDirTool(file)); // 重新遍历一下，将子内容递归进行删除，并且删除的动作都返回一个Promise操作
             Promise.all(files).then(() => {
               // 当所有的Promise操作均成功的时候进行操作
-              fs.rmdir(dir, resolve);
+              fs.rmdir(dir, (err: any, res: any) => {
+                resolve(StatEnum.SUCCESS);
+              });  // 将这个文件夹进行删除
             })
           })
         } else {

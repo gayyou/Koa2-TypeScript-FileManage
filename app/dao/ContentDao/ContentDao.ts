@@ -9,7 +9,7 @@ export interface ContentDao {
 
   removeContent(contentList: Array<Content>): Promise<any>;
 
-  searchChildrenListById(content: Content): Promise<any>;
+  searchChildrenListById(content: Content): Promise<Array<any>>;
 
   searchChildContent(content: Content): Promise<any>;
 }

@@ -17,7 +17,13 @@ export class ContentServiceImpl implements ContentService {
   }
 
   async addContent(content: Content): Promise<RequestResult> {
-    let bashPath = await this.getPath(content);
+    let parent: Content = new Content();
+    parent.id = content.parentId;
+    parent.ownerId = content.ownerId;
+    let parentList = await this.contentDao.searchContent(parent)
+    if (parent.id != null && !parentList.length) {
+      return new RequestResult(500, '父容器不存在', parent)
+    }
     let targetContent: any = await this.contentDao.searchChildContent(content);
 
     if (targetContent.length) {
@@ -25,7 +31,9 @@ export class ContentServiceImpl implements ContentService {
     }
 
     // 进行创建文件夹
-    let resultMsg: StatEnum = await this.directoryOperate.createDir(bashPath + content.name);
+
+    let bashPath = await this.getPath(parent);
+    let resultMsg: StatEnum = await this.directoryOperate.createDir(bashPath + '/' + content.name);
     if (resultMsg == StatEnum.SUCCESS) {
       let status = this.contentDao.addContent(content);
       if (status) {
@@ -42,9 +50,9 @@ export class ContentServiceImpl implements ContentService {
    * @param content
    */
   async deleteContent(content: Content): Promise<RequestResult> {
-    let dataResult: any = await this.contentDao.searchContent(content);
+    let dataResultList: any = await this.contentDao.searchContent(content);
 
-    if (dataResult.length) {
+    if (dataResultList.length) {
       let path = await this.getPath(content);
 
       if (!path.length) {
@@ -53,7 +61,25 @@ export class ContentServiceImpl implements ContentService {
 
       let status: StatEnum = await this.directoryOperate.deleteDir(path);
       if (status == StatEnum.SUCCESS) {
-        return new RequestResult(200, status, content)
+        let childList: any = await this.contentDao.searchChildrenListById(content),
+            tempLen,
+            i = 0;
+        tempLen = -1;
+        while(tempLen !== childList.length) {
+          tempLen = childList.length;
+          for (; i < tempLen; i++) {
+            content.id = childList[i].id
+            childList = [...childList, ...await this.contentDao.searchChildrenListById(content)];
+          }
+        }
+
+        dataResultList = [...dataResultList, ...childList]
+
+        let result = await this.contentDao.removeContent(dataResultList);
+        if (!result) {
+          return new RequestResult(500, StatEnum.DATA_UNKNOW_ERROR, content)
+        }
+        return new RequestResult(200, status, content);
       }
       return new RequestResult(500, status, content);
     }
@@ -62,11 +88,39 @@ export class ContentServiceImpl implements ContentService {
   }
 
   async renameContent(content: Content): Promise<RequestResult> {
-    return undefined;
+    let path = await this.getPath(content);
+
+    if (!path.length) {
+      return new RequestResult(500, StatEnum.DELETE_PATH_IS_NOT_EXIST, content);
+    }
+
+    let status: StatEnum = await this.directoryOperate.renameDir(content.name, path);
+
+    if (status == StatEnum.SUCCESS) {
+      let result = await this.contentDao.changeContent(content);
+      if (result) {
+        return new RequestResult(200, StatEnum.SUCCESS, {});
+      }
+      return new RequestResult(500, StatEnum.FAIL, {});
+    }
+
+    return new RequestResult(500, status, {});
   }
 
   async searchAllChildContent(content: Content): Promise<RequestResult> {
-    return undefined;
+    let resultArr = await this.contentDao.searchChildrenListById(content);
+    let contentList: Array<any> = [], len = resultArr.length;
+
+    while(len--) {
+      contentList.push({
+        name: resultArr[len].name,
+        id: resultArr[len].id
+      })
+    }
+    return new RequestResult(200, StatEnum.SUCCESS, {
+      ownerId: content.ownerId,
+      childContentList: contentList
+    });
   }
 
   async getPath(content: Content): Promise<string> {
@@ -78,16 +132,16 @@ export class ContentServiceImpl implements ContentService {
       return '';
     }
 
-    pathArr.push(result.name);
+    pathArr.push(result[0].name);
 
     while (!isUndef(result[0].parentid)) {
       parentContent.id = result[0].parentid;
       result = await this.contentDao.searchContent(parentContent);
-      console.log(result)
+
       if (!result.length) {
         throw new Error(StatEnum.DIR_AND_DATABASE_IS_NOT_SYNC);
       }
-      pathArr.push(result.name);
+      pathArr.push(result[0].name);
     }
 
     return pathArr.reverse().join('/');

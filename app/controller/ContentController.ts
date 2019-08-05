@@ -5,6 +5,7 @@ import {Content} from "../model/bo/Content";
 import {User} from "../model/bo/User";
 import {ContentServiceImpl} from "../service/impl/ContentServiceImpl";
 import {StatEnum} from "../enums/StatEnum";
+import {is} from "type-is";
 
 @RequestMapping('/content')
 export class ContentController {
@@ -26,11 +27,11 @@ export class ContentController {
     // 获取session值
     let user: User = ctx.session.user;
     if (!user) {
-      return new RequestResult(500, '登陆过期，请重新登陆', {});
+      return new RequestResult(500, StatEnum.SESSION_IS_TIMEOUT, {});
     }
     // 初始化对象值
     content.name = name;
-    content.parentId = parentId;
+    content.parentId = parentId == 0 ? null : parentId;
     content.ownerId = user.id;
     return await new ContentServiceImpl().addContent(content);
   }
@@ -49,16 +50,36 @@ export class ContentController {
 
     let content: Content = new Content();
     content.id = contentId;
-    return new ContentServiceImpl().deleteContent(content);
+    return await new ContentServiceImpl().deleteContent(content);
   }
 
   @PostMapping('/searchallchildren')
   async searchAllChildren(ctx): Promise<RequestResult> {
-    return ;
+    let { contentId } = ctx.request.body;
+
+    let content: Content = new Content();
+    content.id = contentId;
+    if (!ctx.session.user) {
+      return new RequestResult(500, StatEnum.SESSION_IS_TIMEOUT, {});
+    }
+
+    content.ownerId = ctx.session.user.id;
+
+    return await new ContentServiceImpl().searchAllChildContent(content);
   }
 
   @PostMapping('/rename')
   async renameContent(ctx): Promise<RequestResult> {
-    return ;
+    let { contentId, changeName } = ctx.request.body;
+
+    if (isUndef(contentId) || isUndef(changeName)) {
+      return new RequestResult(500, StatEnum.REQUEST_DATA_FORMAT_IS_ERROR, {});
+    }
+
+    let content: Content = new Content();
+    content.id = contentId;
+    content.name = changeName;
+
+    return await new ContentServiceImpl().renameContent(content);
   }
 }

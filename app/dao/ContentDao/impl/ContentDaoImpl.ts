@@ -40,14 +40,14 @@ export class ContentDaoImpl implements ContentDao {
    * @description 删除目录
    * @param content
    */
-  async removeContent(contentList: Array<Content>): Promise<any> {
+  async removeContent(contentList: Array<any>): Promise<any> {
     let idArray = [],
         sqlStr: string = 'DELETE FROM content WHERE id IN (';
     for (let i = 0; i < contentList.length; i++) {
       idArray.push(contentList[i].id);
       sqlStr += '?,';
     }
-    sqlStr.substring(sqlStr.length - 1);
+    sqlStr = sqlStr.slice(0, sqlStr.length - 1);
     sqlStr += ');';
 
     let result: any = await querySqlStr(sqlStr, [...idArray]);
