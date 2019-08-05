@@ -4,6 +4,8 @@ import {FileService} from "../service/FileService";
 import {FileServiceImpl} from "../service/impl/FileServiceImpl";
 import { File } from '../model/bo/File'
 import {isNumber, isString, isUndef} from "../utils/typeUtils";
+import {StatEnum} from "../enums/StatEnum";
+import {Content} from "../model/bo/Content";
 
 @RequestMapping('/file')
 export class FileController {
@@ -17,12 +19,13 @@ export class FileController {
       return new RequestResult(500, '未设置文件名', {});
     }
 
-    if (!isString(name) || !isNumber(contentId)) {
-      return new RequestResult(500, '数据格式出错', {});
-    }
+    // if (!isString(name) || !isNumber(contentId)) {
+    //   return new RequestResult(500, '数据格式出错', {});
+    // }
 
     try {
-      filePath = request.files.files.File.path;
+      filePath = request.files.file.path;
+      console.log(request.files.file.path)
     } catch (e) {
       filePath = null;
     }
@@ -30,11 +33,11 @@ export class FileController {
       return new RequestResult(500, '没有上传文件', {});;
     }
 
-    let file: File = new File({
-      name,
-      path: filePath,
-      contentId
-    });
+    let file: File = new File();
+
+    file.name = name;
+    file.streamPath = filePath;
+    file.contentId = parseInt(contentId);
 
     let user = ctx.session.user;
     if (isUndef(user)) {
@@ -43,22 +46,43 @@ export class FileController {
       file.ownerId = user.id
     }
 
-    let fileService: FileService = new FileServiceImpl();
-    return await fileService.addFile(file);
+    return await new FileServiceImpl().addFile(file);
   }
 
   @PostMapping('/deletefile')
   async deleteFile(ctx: any): Promise<RequestResult> {
-    return ;
+    let { id } = ctx.request.body;
+
+    if (isUndef(id)) {
+      return new RequestResult(500, StatEnum.REQUEST_DATA_FORMAT_IS_ERROR, {});
+    }
+    let file = new File();
+
+    file.id = id;
+    return new FileServiceImpl().removeFile(file);
   }
 
   @PostMapping('/changename')
   async changeFileName(ctx: any): Promise<RequestResult> {
-    return ;
+    let { fileId, name } = ctx.request.body;
+    let file = new File();
+
+    file.id = fileId;
+    file.name = name;
+
+    return await new FileServiceImpl().changeFileName(file);
   }
 
   @PostMapping('/seachfiles')
   async searchContentAllFile(ctx: any): Promise<RequestResult> {
-    return ;
+    let { contentId } = ctx.request.body;
+
+    if (isUndef(contentId)) {
+      return new RequestResult(500, StatEnum.REQUEST_DATA_FORMAT_IS_ERROR, {});
+    }
+
+    let content: Content = new Content();
+    content.id = contentId;
+    return await new FileServiceImpl().searchContentAllFiles(content);
   }
 }

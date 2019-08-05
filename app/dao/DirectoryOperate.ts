@@ -74,12 +74,12 @@ export class DirectoryOperate {
   public async renameDir(newName: string, targetPath: string): Promise<StatEnum> {
     targetPath = targetPath ? bashPath + targetPath : this.path;
 
-    // let basePath: string = getBasePath(targetPath);  // 得到父容器的路径
+    let newBashPath: string = getBasePath(targetPath);  // 得到父容器的路径
 
     let isExist: any = await DirectoryOperate.getStat(targetPath);
-    console.log(targetPath.split('/').slice(0, targetPath.length - 1).join('/') + '/' + newName)
+
     if (isExist && isExist.isDirectory()) {
-      await fs.renameSync(targetPath,targetPath.split('/').slice(0, targetPath.length - 1).join('/') + '/' + newName);
+      await fs.renameSync(targetPath,newBashPath + '/' + newName);
       return StatEnum.SUCCESS;
     } else if (isExist) {
       return StatEnum.DIR_SAME_NAME_OF_FILE;

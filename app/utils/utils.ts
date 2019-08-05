@@ -4,6 +4,6 @@ export function getBasePath(path: string): string {
   if (!basePathArr.length) {
     return '';
   }
-
-  return basePathArr.splice(-1, 1).join('/');
+  basePathArr.length = basePathArr.length - 1;
+  return basePathArr.join('/');
 }

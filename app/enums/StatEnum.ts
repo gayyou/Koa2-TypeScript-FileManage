@@ -37,5 +37,12 @@ export enum StatEnum {
    * 删除状态码
    */
   DELETE_TARGET_IS_FILE = '删除的目标不是目录，而是文件',
-  DELETE_PATH_IS_NOT_EXIST = '删除的目录不存在'
+  DELETE_PATH_IS_NOT_EXIST = '删除的目录不存在',
+
+  /**
+   * 文件操作状态码
+   */
+  FILE_IS_EXIST = '文件已经存在',
+  FILE_IS_SAME_OF_DIR = "同目录下有文件夹和该文件相同名称",
+  FILE_IS_NOT_EXIST = "文件不存在"
 }

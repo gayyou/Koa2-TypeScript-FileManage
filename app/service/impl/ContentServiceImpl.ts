@@ -32,7 +32,7 @@ export class ContentServiceImpl implements ContentService {
 
     // 进行创建文件夹
 
-    let bashPath = await this.getPath(parent);
+    let bashPath = await ContentServiceImpl.getPath(parent);
     let resultMsg: StatEnum = await this.directoryOperate.createDir(bashPath + '/' + content.name);
     if (resultMsg == StatEnum.SUCCESS) {
       let status = this.contentDao.addContent(content);
@@ -53,7 +53,7 @@ export class ContentServiceImpl implements ContentService {
     let dataResultList: any = await this.contentDao.searchContent(content);
 
     if (dataResultList.length) {
-      let path = await this.getPath(content);
+      let path = await ContentServiceImpl.getPath(content);
 
       if (!path.length) {
         return new RequestResult(500, StatEnum.DELETE_PATH_IS_NOT_EXIST, content);
@@ -88,7 +88,7 @@ export class ContentServiceImpl implements ContentService {
   }
 
   async renameContent(content: Content): Promise<RequestResult> {
-    let path = await this.getPath(content);
+    let path = await ContentServiceImpl.getPath(content);
 
     if (!path.length) {
       return new RequestResult(500, StatEnum.DELETE_PATH_IS_NOT_EXIST, content);
@@ -123,11 +123,12 @@ export class ContentServiceImpl implements ContentService {
     });
   }
 
-  async getPath(content: Content): Promise<string> {
+  static async getPath(content: Content): Promise<string> {
     let pathArr: Array<string> = [],
-        parentContent: Content = new Content();
+        parentContent: Content = new Content(),
+        contentDao: ContentDao = new ContentDaoImpl();
 
-    let result: any = await this.contentDao.searchContent(content);
+    let result: any = await contentDao.searchContent(content);
     if (!result.length) {
       return '';
     }
@@ -136,7 +137,7 @@ export class ContentServiceImpl implements ContentService {
 
     while (!isUndef(result[0].parentid)) {
       parentContent.id = result[0].parentid;
-      result = await this.contentDao.searchContent(parentContent);
+      result = await contentDao.searchContent(parentContent);
 
       if (!result.length) {
         throw new Error(StatEnum.DIR_AND_DATABASE_IS_NOT_SYNC);

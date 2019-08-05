@@ -5,7 +5,6 @@ import {Content} from "../model/bo/Content";
 import {User} from "../model/bo/User";
 import {ContentServiceImpl} from "../service/impl/ContentServiceImpl";
 import {StatEnum} from "../enums/StatEnum";
-import {is} from "type-is";
 
 @RequestMapping('/content')
 export class ContentController {

@@ -1,6 +1,7 @@
 import { FileDao } from "../FileDao";
 import { File } from '../../../model/bo/File'
 import { querySqlStr } from "../../CreateConnection";
+import {Content} from "../../../model/bo/Content";
 
 export class FileDaoImpl implements FileDao {
   /**
@@ -9,7 +10,7 @@ export class FileDaoImpl implements FileDao {
    */
   async addFile(file: File): Promise<any> {
     let { name, contentId, ownerId } = file,
-        strSql = 'insert into file (name, parentid, ownerid) values (?, ?, ?);'
+        strSql = 'insert into file (name, parentid, ownerid) values (?, ?, ?);';
 
     let result: any = await querySqlStr(strSql, [name, contentId, ownerId]);
 
@@ -21,9 +22,16 @@ export class FileDaoImpl implements FileDao {
 
   async searchFile(file): Promise<any> {
     let { name, contentId, ownerId } = file,
-        strSql = 'select * from file where name = ?, contentId = ? and ownerId = ?';
+        strSql = 'select * from file where name = ? and parentid = ? and ownerid = ?';
 
     return await querySqlStr(strSql, [name, contentId, ownerId]);
+  }
+
+  async searchFileById(file): Promise<any> {
+    let { id } = file,
+        sqlStr = 'select * from file where id = ?;';
+
+    return await querySqlStr(sqlStr, [id]);
   }
 
   /**
@@ -32,7 +40,7 @@ export class FileDaoImpl implements FileDao {
    */
   async changeFileName(file: File): Promise<any> {
     let { name, id } = file,
-        sqlStr = 'update file set name = ? where id = ?;';
+        sqlStr = 'UPDATE file SET name=? where id=?;';
 
     let result: any = await querySqlStr(sqlStr, [name, id]);
 
@@ -56,7 +64,7 @@ export class FileDaoImpl implements FileDao {
       sqlStr += '?,';
     }
 
-    sqlStr.substring(sqlStr.length - 1);
+    sqlStr = sqlStr.slice(0, sqlStr.length - 1);
     sqlStr += ');';
 
     let result: any = querySqlStr(sqlStr, [...fileArr])
@@ -82,5 +90,11 @@ export class FileDaoImpl implements FileDao {
     }
     return false;
   }
-  
+
+  async searchChildrenFile(content: Content): Promise<any> {
+    let { id } = content,
+        sqlStr = 'select * from file where parentid = ?;';
+
+    return await querySqlStr(sqlStr, [id]);
+  }
 }

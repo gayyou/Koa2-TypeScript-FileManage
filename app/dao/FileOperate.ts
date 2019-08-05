@@ -1,9 +1,10 @@
-import { File } from '../model/bo/File'
-import {DirectoryOperate} from "./DirectoryOperate";
+import {File} from '../model/bo/File'
+import {bashPath, DirectoryOperate} from "./DirectoryOperate";
+import {getBasePath} from "../utils/utils";
+import {StatEnum} from "../enums/StatEnum";
+
 const path = require('path');
 const fs = require('fs');
-import { bashPath } from "./DirectoryOperate";
-import {getBasePath} from "../utils/utils";
 
 export class FileOperate {
   constructor() {
@@ -22,7 +23,10 @@ export class FileOperate {
       reader = fs.createReadStream(path),
       savePath = bashPath + file.url;
 
-    if (!await DirectoryOperate.getStat(savePath)) {
+
+    let isExist = await DirectoryOperate.getStat(savePath)
+
+    if (isExist) {
       // 如果不存在目标路径，那么就返回false
       return false;
     }
@@ -51,45 +55,54 @@ export class FileOperate {
    * @param newName
    * @param file
    */
-  public async renameFile(newName, file: File | undefined) {
+  public async renameFile(newName, file: File | undefined): Promise<StatEnum> {
     if (!file) {
       throw new Error('file is not defined');
     }
 
-    let isExist: any = await DirectoryOperate.getStat(file.url);
+    let pathName = bashPath + file.url;
+
+    let isExist: any = await DirectoryOperate.getStat(pathName);
+
+    console.log(file.url)
+
 
     if (isExist && !isExist.isDirectory()) {
       // 目标存在，并且不是目录，那么就符合要求，进行修改文件名
 
-      let basePath: string = getBasePath(file.url);  // 得到父容器的路径
+      let basePath: string = getBasePath(pathName);  // 得到父容器的路径
 
-      return await fs.renameSync(file.url,basePath + newName);  // 异步修改文件名并返回结果
+      await fs.renameSync(pathName,basePath + newName);  // 异步修改文件名并返回结果
+      return StatEnum.SUCCESS;
     } else if (isExist) {
-      throw new Error('the target is a directory');
+      return StatEnum.FILE_IS_SAME_OF_DIR;
     }
-    throw  new Error('The url is not exist');
+
+    return StatEnum.FILE_IS_NOT_EXIST;
   }
 
-  public async deleteFile (file: File | undefined) {
+  public async deleteFile (file: File | undefined): Promise<StatEnum> {
     if (!file) {
       throw new Error('file is not defined');
     }
-
-    let isExist: any = await DirectoryOperate.getStat(file.url);
+    let pathName = bashPath + file.url;
+    let isExist: any = await DirectoryOperate.getStat(pathName);
 
     if (isExist && !isExist.isDirectory()) {
       // 目标存在，并且不是目录，那么就符合要求，进行修改文件名
       return await new Promise((resolve, reject) => {
         try {
-          fs.unlink(file.url, resolve)
+          fs.unlink(pathName, () => {
+            resolve(StatEnum.SUCCESS)
+          })
         } catch (e) {
           reject(e);
         }
       })
     } else if (isExist) {
-      throw new Error('the target is a directory');
+      return StatEnum.FILE_IS_SAME_OF_DIR;
     }
-    throw  new Error('The url is not exist');
+    return StatEnum.FILE_IS_NOT_EXIST;
   }
 
   /**

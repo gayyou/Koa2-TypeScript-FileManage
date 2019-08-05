@@ -3,5 +3,6 @@ export const mysqlConfig = {
   port: 3306,
   user: 'root',
   password: '123456',
-  database: 'filemanage'
+  database: 'filemanage',
+  characterEncoding: 'utf8'
 }
